@@ -36,6 +36,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .primary{background:var(--sun);color:#12263F;border:0;border-radius:12px;padding:13px 22px;font-weight:800;margin-top:6px}
 .ghost{background:none;border:1.5px solid var(--line);border-radius:12px;padding:12px 18px;font-weight:600;margin:6px 8px 0 0}
 .score{font-size:clamp(3.5rem,18vw,6rem);font-weight:800;line-height:1;margin:6px 0}
+.nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}.nav button{margin:0}
 .hidden{display:none}
 </style>
 </head>
@@ -43,15 +44,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 <main>
 <section id="home">
   <h1>Know the<br>whole world.</h1>
-  <p class="sub">10 questions a round. Pick a topic, or mix everything.</p>
+  <p class="sub">10 questions a round. Pick a topic, then a level.</p>
   <div class="grid" id="cats"></div>
 </section>
+<section id="lvl" class="hidden"><button class="ghost" id="back">← Topics</button><h1 id="lvlTitle"></h1><p class="sub">Choose your level</p><div class="grid" id="lvls"></div></section>
 <section id="game" class="hidden">
   <div class="bar"><span id="catName"></span><span id="count"></span></div>
   <div class="track"><div class="fill" id="fill"></div></div>
   <p class="q" id="q"></p>
   <div id="opts"></div>
-  <button class="primary hidden" id="next">Next question</button>
+  <div class="nav"><button class="ghost" id="prev">← Back</button><button class="primary hidden" id="next">Next question</button></div>
 </section>
 <section id="end" class="hidden">
   <p class="sub" id="endCat"></p>
@@ -65,8 +67,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 const CATS={Maths:"🧮",Addition:"➕",Subtraction:"➖",Multiplication:"✖️",Division:"➗",Science:"🔬",Social:"🏘️",Arts:"🎨",Space:"🚀",Hindi:"अ",Geography:"🌍",History:"🏛️",Animals:"🐘",Technology:"💻",Sports:"⚽",Body:"🫀",India:"🇮🇳"};
 const LABEL={Space:"Galaxy",Maths:"Maths mix"};
 const R=(a,b)=>a+Math.random()*(b-a+1)|0;
-const OPS={Addition:()=>{const a=R(10,99),b=R(10,99);return[`${a} + ${b} = ?`,a+b]},Subtraction:()=>{const a=R(30,99),b=R(10,a-1);return[`${a} − ${b} = ?`,a-b]},Multiplication:()=>{const a=R(2,12),b=R(2,12);return[`${a} × ${b} = ?`,a*b]},Division:()=>{const b=R(2,12),r=R(2,12);return[`${b*r} ÷ ${b} = ?`,r]}};
-function genQ(c){const k=c==="Maths"?Object.keys(OPS)[R(0,3)]:c;const[q,a]=OPS[k]();const s=new Set([a]);while(s.size<4){const d=a+R(-10,10);if(d>=0)s.add(d)}const o=[...s].map(String);return[k,q,o,o.indexOf(String(a))]}
+const RG=[[1,9],[10,99],[100,999]],MG=[[2,9],[6,15],[11,30]];
+const OPS={Addition:()=>{const[x,y]=RG[lv],a=R(x,y),b=R(x,y);return[`${a} + ${b} = ?`,a+b]},Subtraction:()=>{const[x,y]=RG[lv],a=R(x+1,y),b=R(x,a-1);return[`${a} \u2212 ${b} = ?`,a-b]},Multiplication:()=>{const[x,y]=MG[lv],a=R(x,y),b=R(x,y);return[`${a} \u00d7 ${b} = ?`,a*b]},Division:()=>{const[x,y]=MG[lv],b=R(x,y),r=R(x,y);return[`${b*r} \u00f7 ${b} = ?`,r]}};
+function genQ(c){const k=c==="Maths"?Object.keys(OPS)[R(0,3)]:c;const[q,a]=OPS[k]();const sp=Math.max(10,a/10|0),st=new Set([a]);while(st.size<4){const d=a+R(-sp,sp);if(d>=0)st.add(d)}const o=[...st].map(String);return[k,q,o,o.indexOf(String(a))]}
 // [category, question, [options], correct index]
 const Q=[
 ["Geography","Which is the largest ocean?",["Atlantic","Pacific","Indian","Arctic"],1],
@@ -75,24 +78,12 @@ const Q=[
 ["Geography","Which country has the most time zones (incl. territories)?",["Russia","USA","France","China"],2],
 ["Geography","Mount Everest lies on the border of Nepal and which country?",["India","Bhutan","China","Pakistan"],2],
 ["Geography","Which is the smallest country in the world?",["Monaco","Vatican City","San Marino","Malta"],1],
-["Science","What gas do plants absorb for photosynthesis?",["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],2],
-["Science","What is the chemical symbol for gold?",["Ag","Au","Gd","Go"],1],
-["Science","Which is the hardest natural substance?",["Quartz","Iron","Diamond","Granite"],2],
-["Science","Sound travels fastest through which?",["Air","Water","Steel","Vacuum"],2],
-["Science","What is the powerhouse of the cell?",["Nucleus","Ribosome","Mitochondria","Golgi body"],2],
-["Science","Water boils at what temperature at sea level?",["90°C","100°C","110°C","120°C"],1],
 ["History","Who was the first President of the United States?",["Lincoln","Jefferson","Washington","Adams"],2],
 ["History","In which year did World War II end?",["1943","1945","1947","1950"],1],
 ["History","Which civilization built Machu Picchu?",["Aztec","Maya","Inca","Olmec"],2],
 ["History","The Great Wall is mainly associated with which country?",["Japan","India","China","Mongolia"],2],
 ["History","Who discovered America in 1492 (European voyage)?",["Vasco da Gama","Columbus","Magellan","Cook"],1],
 ["History","The French Revolution began in which year?",["1689","1789","1815","1848"],1],
-["Space","Which planet is known as the Red Planet?",["Venus","Mars","Jupiter","Mercury"],1],
-["Space","Who was the first human in space?",["Neil Armstrong","Yuri Gagarin","Buzz Aldrin","Alan Shepard"],1],
-["Space","Which planet has the most prominent rings?",["Jupiter","Uranus","Saturn","Neptune"],2],
-["Space","What is the closest star to Earth?",["Sirius","The Sun","Alpha Centauri","Polaris"],1],
-["Space","Which is the largest planet in our solar system?",["Saturn","Jupiter","Neptune","Earth"],1],
-["Space","India's Chandrayaan-3 landed near which part of the Moon?",["North pole","Equator","South pole","Far side"],2],
 ["Animals","Which is the largest land animal?",["Rhino","Hippo","African elephant","Giraffe"],2],
 ["Animals","Which bird cannot fly and lives in Antarctica?",["Ostrich","Emu","Penguin","Kiwi"],2],
 ["Animals","How many hearts does an octopus have?",["1","2","3","8"],2],
@@ -111,12 +102,6 @@ const Q=[
 ["Sports","Which sport uses a shuttlecock?",["Tennis","Badminton","Squash","Table tennis"],1],
 ["Sports","Which country won the 2022 FIFA World Cup?",["France","Brazil","Argentina","Croatia"],2],
 ["Sports","How often are the Summer Olympics held?",["2 years","3 years","4 years","5 years"],2],
-["Arts","Who painted the Mona Lisa?",["Michelangelo","Leonardo da Vinci","Raphael","Van Gogh"],1],
-["Arts","Who wrote 'Romeo and Juliet'?",["Dickens","Shakespeare","Austen","Tolstoy"],1],
-["Arts","Which instrument has 88 keys?",["Organ","Accordion","Piano","Harp"],2],
-["Arts","The Taj Mahal was built by which Mughal emperor?",["Akbar","Shah Jahan","Aurangzeb","Humayun"],1],
-["Arts","Who composed the 'Fifth Symphony' with the famous four-note opening?",["Mozart","Bach","Beethoven","Chopin"],2],
-["Arts","Which Japanese art folds paper into shapes?",["Ikebana","Origami","Bonsai","Kintsugi"],1],
 ["Body","How many bones does an adult human have?",["186","206","226","256"],1],
 ["Body","Which organ pumps blood around the body?",["Liver","Lungs","Heart","Kidney"],2],
 ["Body","Which vitamin do we get from sunlight?",["A","C","D","K"],2],
@@ -129,58 +114,196 @@ const Q=[
 ["India","Which is the national animal of India?",["Lion","Elephant","Bengal tiger","Leopard"],2],
 ["India","In which year did India gain independence?",["1945","1947","1950","1952"],1],
 ["India","ISRO has its main launch site at which place?",["Sriharikota","Bengaluru","Thumba","Mysuru"],0],
-["Social","How many states does India have?",["26","28","29","30"],1],
-["Social","Who is called the Father of the Nation in India?",["Nehru","Subhas Bose","Mahatma Gandhi","Patel"],2],
-["Social","Which is the lower house of India's Parliament?",["Rajya Sabha","Lok Sabha","Vidhan Sabha","Gram Sabha"],1],
-["Social","On which date is Republic Day celebrated in India?",["15 August","26 January","2 October","14 November"],1],
-["Social","Which is the largest continent by area?",["Africa","Asia","Europe","North America"],1],
-["Social","Where is the United Nations headquarters?",["Geneva","London","New York","Paris"],2],
-["Social","What is the currency of Japan?",["Yuan","Won","Yen","Baht"],2],
-["Social","Who wrote India's national anthem?",["Bankim Chandra","Rabindranath Tagore","Sarojini Naidu","Iqbal"],1],
-["Hindi","'पानी' का अंग्रेज़ी अर्थ क्या है?",["Fire","Water","Air","Earth"],1],
-["Hindi","'दिन' का विलोम शब्द क्या है?",["सुबह","शाम","रात","दोपहर"],2],
-["Hindi","'ऊँचा' का विलोम शब्द क्या है?",["नीचा","लंबा","बड़ा","मोटा"],0],
-["Hindi","'चंद्रमा' का पर्यायवाची कौन-सा है?",["रवि","शशि","पवन","नीर"],1],
-["Hindi","हिंदी में स्वर कितने होते हैं (मानक रूप से)?",["10","11","13","52"],1],
-["Hindi","हिंदी दिवस कब मनाया जाता है?",["14 सितंबर","15 अगस्त","26 जनवरी","2 अक्टूबर"],0],
-["Hindi","'किताब' का अंग्रेज़ी शब्द क्या है?",["Pen","Book","Bag","Desk"],1],
-["Space","What is the name of our galaxy?",["Andromeda","Milky Way","Triangulum","Whirlpool"],1],
-["Space","Which planet is closest to the Sun?",["Venus","Mercury","Mars","Earth"],1],
-["Space","How many planets are in our solar system?",["7","8","9","10"],1],
-["Space","Sunlight takes about how long to reach Earth?",["8 seconds","8 minutes","8 hours","8 days"],1],
-["Space","Which large spiral galaxy is nearest to the Milky Way?",["Andromeda","Sombrero","Pinwheel","Cartwheel"],0],
-["Space","The boundary around a black hole is called?",["Corona","Event horizon","Singularity ring","Photosphere"],1],
-["Arts","Who is traditionally credited with writing the Ramayana?",["Vyasa","Valmiki","Kalidasa","Tulsidas"],1],
-["Arts","Which classical dance form is from Tamil Nadu?",["Kathak","Bharatanatyam","Odissi","Kuchipudi"],1]
 ];
-const $=id=>document.getElementById(id),show=id=>["home","game","end"].forEach(s=>$(s).classList.toggle("hidden",s!==id));
+const B={
+Science:`Water freezes at what temperature?|0°C|10°C|-10°C|100°C
+Which gas do we breathe in to live?|Oxygen|Helium|Nitrogen|Neon
+What is the Sun?|A star|A planet|A moon|A comet
+How many legs does an insect have?|6|4|8|10
+Which organ do we use to see?|Eye|Ear|Nose|Skin
+What force pulls objects to the ground?|Gravity|Magnetism|Friction|Wind
+Which of these is a liquid at room temperature?|Water|Iron|Oxygen|Wood
+Plants make their food using?|Sunlight|Moonlight|Wind|Sand
+Which of these is a mammal?|Whale|Shark|Frog|Eagle
+Magnets attract which material?|Iron|Wood|Glass|Paper
+Chemical formula of water?|H2O|CO2|O2|NaCl
+Which gas is most abundant in air?|Nitrogen|Oxygen|Carbon dioxide|Argon
+Unit of electric current?|Ampere|Volt|Ohm|Watt
+Which blood cells fight infection?|White blood cells|Red blood cells|Platelets|Plasma
+What is the pH of pure water?|7|0|1|14
+Which particle has a negative charge?|Electron|Proton|Neutron|Nucleus
+Speed of light is about?|3 × 10^8 m/s|3 × 10^6 m/s|3 × 10^5 m/s|3 × 10^10 m/s
+Which gas is used in fire extinguishers?|Carbon dioxide|Hydrogen|Methane|Helium
+Liquid turning into gas is called?|Evaporation|Condensation|Freezing|Melting
+Which metal is liquid at room temperature?|Mercury|Lead|Zinc|Tin
+Atomic number of carbon?|6|12|8|14
+Who gave the three laws of motion?|Isaac Newton|Galileo|Einstein|Faraday
+SI unit of force?|Newton|Joule|Pascal|Watt
+Which organelle carries out photosynthesis?|Chloroplast|Mitochondria|Vacuole|Ribosome
+DNA stands for?|Deoxyribonucleic acid|Dinitrogen acid|Dextro nucleic acid|Deoxyribose nitrate
+Which element has the symbol Fe?|Iron|Fluorine|Francium|Fermium
+Which mirror is used in vehicle headlights?|Concave|Convex|Plane|Cylindrical
+Lack of which vitamin causes scurvy?|Vitamin C|Vitamin A|Vitamin D|Vitamin B12
+Absolute zero is about?|-273°C|-100°C|-373°C|0°C
+Which law states V = IR?|Ohm's law|Boyle's law|Hooke's law|Charles's law`,
+Social:`What is the capital of India?|New Delhi|Mumbai|Kolkata|Chennai
+How many colours are in India's flag (excluding the chakra)?|3|2|4|5
+Who is called the Father of the Nation in India?|Mahatma Gandhi|Nehru|Patel|Tagore
+Independence Day of India is on?|15 August|26 January|2 October|14 November
+National bird of India?|Peacock|Parrot|Sparrow|Crow
+What is the currency of India?|Rupee|Dollar|Yen|Pound
+Which is the largest continent?|Asia|Africa|Europe|Australia
+Which is the festival of lights?|Diwali|Holi|Pongal|Eid
+How many continents are there?|7|5|6|8
+National animal of India?|Bengal tiger|Lion|Elephant|Deer
+Who is the head of state of India?|The President|Prime Minister|Chief Justice|Speaker
+Which is the lower house of Parliament?|Lok Sabha|Rajya Sabha|Vidhan Sabha|Gram Sabha
+Minimum voting age in India?|18|16|21|25
+Who chaired the Constitution drafting committee?|B. R. Ambedkar|Nehru|Gandhi|Patel
+Where is the UN headquarters?|New York|Geneva|Paris|London
+India became a republic in?|1950|1947|1949|1952
+Capital of Tamil Nadu?|Chennai|Madurai|Coimbatore|Thanjavur
+Which body issues Indian currency notes?|Reserve Bank of India|SBI|Finance Ministry|NITI Aayog
+Which river is considered India's holiest?|Ganga|Godavari|Krishna|Narmada
+Which ocean lies south of India?|Indian Ocean|Pacific|Atlantic|Arctic
+Which Article abolishes untouchability?|Article 17|Article 14|Article 21|Article 32
+First woman Prime Minister of India?|Indira Gandhi|Sarojini Naidu|Pratibha Patil|Sonia Gandhi
+Quit India Movement began in?|1942|1930|1920|1947
+Which 1757 battle began British rule in Bengal?|Battle of Plassey|Battle of Panipat|Battle of Buxar|Battle of Haldighati
+First Governor-General of independent India?|Lord Mountbatten|C. Rajagopalachari|Lord Curzon|Warren Hastings
+Which treaty ended WWI with Germany?|Treaty of Versailles|Treaty of Paris|Treaty of Vienna|Treaty of Tordesillas
+The Dandi March was led by?|Mahatma Gandhi|Subhas Bose|Bhagat Singh|Lala Lajpat Rai
+India's highest civilian award?|Bharat Ratna|Padma Shri|Padma Bhushan|Ashoka Chakra
+How many Fundamental Rights does the Constitution list now?|6|7|5|8
+Where is the Supreme Court of India?|New Delhi|Mumbai|Kolkata|Allahabad`,
+Arts:`Who painted the Mona Lisa?|Leonardo da Vinci|Picasso|Van Gogh|Monet
+Which are the primary colours?|Red, Blue, Yellow|Red, Green, Pink|Black, White, Grey|Orange, Purple, Green
+Which instrument has black and white keys?|Piano|Drum|Flute|Violin
+Mixing blue and yellow gives?|Green|Purple|Orange|Brown
+Which art folds paper into shapes?|Origami|Pottery|Weaving|Carving
+Who wrote Romeo and Juliet?|Shakespeare|Dickens|Tagore|Austen
+Which dance is from Tamil Nadu?|Bharatanatyam|Kathak|Bhangra|Garba
+The Taj Mahal is in which city?|Agra|Delhi|Jaipur|Lucknow
+Which instrument is played with a bow?|Violin|Tabla|Flute|Dholak
+Who wrote the Ramayana (traditionally)?|Valmiki|Vyasa|Kalidasa|Tulsidas
+Who painted 'The Starry Night'?|Vincent van Gogh|Monet|Picasso|Dali
+The tabla is what kind of instrument?|Percussion|String|Wind|Keyboard
+Who wrote Gitanjali?|Rabindranath Tagore|Premchand|R. K. Narayan|Kalidasa
+Which Mughal emperor built the Taj Mahal?|Shah Jahan|Akbar|Babur|Aurangzeb
+Which dance form is from Kerala?|Kathakali|Kuchipudi|Odissi|Manipuri
+Cubism was pioneered by Picasso and?|Georges Braque|Monet|Dali|Renoir
+Who is the 'Father of Indian cinema'?|Dadasaheb Phalke|Satyajit Ray|Raj Kapoor|Guru Dutt
+Who composed the Mahabharata (traditionally)?|Vyasa|Valmiki|Kalidasa|Bhasa
+Madhubani painting comes from?|Bihar|Rajasthan|Kerala|Maharashtra
+Who wrote 'Hamlet'?|William Shakespeare|Marlowe|Milton|Chaucer
+Who painted 'Guernica'?|Pablo Picasso|Salvador Dali|Goya|Matisse
+Who composed 'The Four Seasons'?|Antonio Vivaldi|Bach|Mozart|Handel
+The Ajanta caves are famous for?|Mural paintings|Coins|Forts|Textiles
+Which painter is known for melting clocks?|Salvador Dali|Monet|Manet|Klimt
+Who wrote 'Abhijnanashakuntalam'?|Kalidasa|Bharata|Banabhatta|Jayadeva
+The Natya Shastra is by?|Bharata Muni|Patanjali|Valmiki|Panini
+Which Indian filmmaker got an honorary Oscar in 1992?|Satyajit Ray|Mira Nair|Shyam Benegal|Ritwik Ghatak
+Nataraja bronzes are famous from which dynasty?|Chola|Maurya|Gupta|Mughal
+Who painted 'Girl with a Pearl Earring'?|Johannes Vermeer|Rembrandt|Rubens|Monet
+Which Italian sculptor made 'David'?|Michelangelo|Donatello|Bernini|Raphael`,
+Space:`Which planet is the Red Planet?|Mars|Venus|Jupiter|Saturn
+Which is the closest star to Earth?|The Sun|Sirius|Polaris|Vega
+Which is the largest planet?|Jupiter|Saturn|Earth|Neptune
+Earth's natural satellite is?|The Moon|Mars|Phobos|Titan
+How many planets are in the solar system?|8|7|9|10
+Which planet is famous for its rings?|Saturn|Mars|Mercury|Earth
+What is our galaxy called?|Milky Way|Andromeda|Orion|Sombrero
+Which planet is closest to the Sun?|Mercury|Venus|Earth|Mars
+Who was the first human on the Moon?|Neil Armstrong|Yuri Gagarin|Buzz Aldrin|Kalpana Chawla
+Which is the hottest planet?|Venus|Mercury|Mars|Jupiter
+Who was the first human in space?|Yuri Gagarin|Neil Armstrong|Alan Shepard|Rakesh Sharma
+Who was the first Indian in space?|Rakesh Sharma|Kalpana Chawla|Sunita Williams|Vikram Sarabhai
+Sunlight takes how long to reach Earth?|About 8 minutes|8 seconds|8 hours|8 days
+Which planet has the Great Red Spot?|Jupiter|Mars|Saturn|Neptune
+What is India's Mars mission called?|Mangalyaan|Chandrayaan|Aditya|Gaganyaan
+A shooting star is really a?|Meteor|Comet|Satellite|Planet
+Which planet spins on its side?|Uranus|Mars|Venus|Mercury
+Largest moon of Saturn?|Titan|Europa|Io|Ganymede
+Nearest large spiral galaxy to the Milky Way?|Andromeda|Triangulum|Cartwheel|Pinwheel
+ISRO's solar mission is?|Aditya-L1|Chandrayaan-3|Mangalyaan|Astrosat
+Chandrayaan-3 landed near which Moon region?|South pole|North pole|Equator|Far side centre
+The boundary of a black hole is called?|Event horizon|Corona|Photosphere|Accretion disc
+Which telescope launched in 2021 sees infrared?|James Webb|Hubble|Kepler|Spitzer
+A light-year measures?|Distance|Time|Speed|Mass
+Which planet has the longest day (rotation)?|Venus|Mercury|Mars|Neptune
+What type of galaxy is the Milky Way?|Barred spiral|Elliptical|Irregular|Lenticular
+Who first saw Jupiter's four big moons?|Galileo|Copernicus|Kepler|Newton
+Which dwarf planet lies in the asteroid belt?|Ceres|Pluto|Eris|Haumea
+The Sun is mostly made of?|Hydrogen|Oxygen|Iron|Carbon
+Escape velocity from Earth is about?|11.2 km/s|7.9 km/s|3 km/s|25 km/s`,
+Hindi:`'सूरज' का अंग्रेज़ी शब्द क्या है?|Sun|Moon|Star|Sky
+'पानी' का पर्यायवाची क्या है?|जल|आग|हवा|धरती
+'दिन' का विलोम क्या है?|रात|सुबह|शाम|दोपहर
+'बड़ा' का विलोम क्या है?|छोटा|लंबा|मोटा|चौड़ा
+हिंदी वर्णमाला का पहला स्वर कौन-सा है?|अ|क|ग|म
+'किताब' का अंग्रेज़ी शब्द क्या है?|Book|Pen|Bag|Desk
+'माँ' का पर्यायवाची क्या है?|जननी|पिता|बहन|भाई
+सप्ताह में कितने दिन होते हैं?|सात|पाँच|छह|आठ
+'फूल' का पर्यायवाची क्या है?|पुष्प|पत्ता|जड़|फल
+'आम' क्या है?|फल|सब्ज़ी|अनाज|पशु
+'चंद्रमा' का पर्यायवाची कौन-सा है?|शशि|रवि|पवन|नीर
+'ऊँचा' का विलोम क्या है?|नीचा|लंबा|बड़ा|मोटा
+हिंदी दिवस कब मनाया जाता है?|14 सितंबर|15 अगस्त|26 जनवरी|2 अक्टूबर
+हिंदी में स्वर कितने माने जाते हैं (मानक)?|11|10|13|52
+'पुस्तक' का पर्यायवाची क्या है?|किताब|कलम|कापी|थैला
+संज्ञा किसे कहते हैं?|नाम बताने वाला शब्द|काम बताने वाला शब्द|गुण बताने वाला शब्द|जोड़ने वाला शब्द
+'हाथी' का पर्यायवाची क्या है?|गज|अश्व|सिंह|मृग
+'अमृत' का विलोम क्या है?|विष|जल|दूध|रस
+हिंदी किस लिपि में लिखी जाती है?|देवनागरी|रोमन|गुरमुखी|ब्राह्मी
+'सुबह' का विलोम क्या है?|शाम|भोर|प्रातः|सवेरा
+'कमल' का पर्यायवाची क्या है?|पंकज|मीन|नयन|वन
+'आँख का तारा' मुहावरे का अर्थ क्या है?|बहुत प्यारा|अंधा होना|बहुत दूर|चतुर
+'नौ दो ग्यारह होना' का अर्थ क्या है?|भाग जाना|गणित करना|धनी होना|खुश होना
+'आकाश' का पर्यायवाची क्या है?|गगन|धरा|नीर|अनल
+'अनल' का अर्थ क्या है?|आग|जल|हवा|धरती
+'महाभारत' के रचयिता कौन हैं?|वेदव्यास|वाल्मीकि|तुलसीदास|कालिदास
+'गोदान' के लेखक कौन हैं?|प्रेमचंद|निराला|जयशंकर प्रसाद|महादेवी वर्मा
+कारक के कितने भेद होते हैं?|आठ|छह|सात|नौ
+'रामचरितमानस' के रचयिता कौन हैं?|तुलसीदास|सूरदास|कबीर|रहीम
+इनमें से तत्सम शब्द कौन-सा है?|सूर्य|सूरज|आग|पानी`
+};
+Object.entries(B).forEach(([c,t])=>t.trim().split("\n").forEach((l,i)=>{const p=l.split("|");Q.push([c,p[0],p.slice(1),0,i/10|0])}));
+const $=id=>document.getElementById(id),show=id=>["home","lvl","game","end"].forEach(s=>$(s).classList.toggle("hidden",s!==id));
 const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
-let cat="All",round=[],i=0,score=0;
+let cat="All",round=[],i=0,score=0,lv=0;const LV=["Easy","Medium","Hard"];
 const cats=$("cats");
 cats.innerHTML=`<button class="cat all" data-c="All"><b>🌐</b><div><span>Everything</span><br><small>Random mix, all ${Q.length} questions</small></div></button>`+
 Object.entries(CATS).map(([c,e])=>`<button class="cat" data-c="${c}"><b>${e}</b><span>${LABEL[c]||c}</span><small>${(c==="Maths"||OPS[c])?"Endless":Q.filter(q=>q[0]===c).length+" questions"}</small></button>`).join("");
-cats.onclick=e=>{const b=e.target.closest("button");if(b)start(b.dataset.c)};
-function start(c){cat=c;round=(c==="Maths"||OPS[c])?Array.from({length:10},()=>genQ(c)):shuf(Q.filter(q=>c==="All"||q[0]===c)).slice(0,10);i=0;score=0;show("game");ask()}
+cats.onclick=e=>{const b=e.target.closest("button");if(b){cat=b.dataset.c;$("lvlTitle").textContent=(CATS[cat]||"\ud83c\udf10")+" "+(cat==="All"?"Everything":LABEL[cat]||cat);show("lvl")}};
+$("lvls").innerHTML=[["\ud83c\udf31","Easy","Warm-up questions"],["\ud83c\udf3f","Medium","A fair challenge"],["\ud83c\udf33","Hard","For quiz champions"]].map((x,k)=>`<button class="cat" data-l="${k}"><b>${x[0]}</b><span>${x[1]}</span><small>${x[2]}</small></button>`).join("");
+$("lvls").onclick=e=>{const b=e.target.closest("button");if(b)start(cat,+b.dataset.l)};
+$("back").onclick=()=>show("home");
+function start(c,l){cat=c;lv=l;round=(c==="Maths"||OPS[c])?Array.from({length:10},()=>genQ(c)):shuf(Q.filter(q=>(c==="All"||q[0]===c)&&(q[4]===undefined||q[4]===l))).slice(0,10);i=0;score=0;hist=[];show("game");ask()}
+let hist=[];
 function ask(){
-  const [c,q,o,a]=round[i];const opts=shuf(o.map((t,k)=>({t,ok:k===a})));
-  $("catName").textContent=(CATS[c]||"")+" "+(LABEL[c]||c);$("count").textContent=`${i+1} / ${round.length}`;
-  $("fill").style.width=(i/round.length*100)+"%";$("q").textContent=q;$("next").classList.add("hidden");
+  const [c,q,o,a]=round[i];
+  if(!hist[i])hist[i]={opts:shuf(o.map((t,k)=>({t,ok:k===a}))),pick:-1};
+  const h=hist[i];
+  $("catName").textContent=(CATS[c]||"")+" "+(LABEL[c]||c)+" · "+LV[lv];$("count").textContent=`${i+1} / ${round.length}`;
+  $("fill").style.width=(i/round.length*100)+"%";$("q").textContent=q;
+  $("prev").textContent=i?"← Back":"← Change level";
   $("opts").innerHTML="";
-  opts.forEach(x=>{const b=document.createElement("button");b.className="opt";b.textContent=x.t;b.onclick=()=>pick(b,x.ok);b.dataset.ok=x.ok;$("opts").appendChild(b)});
+  h.opts.forEach((x,k)=>{const b=document.createElement("button");b.className="opt";b.textContent=x.t;b.onclick=()=>pick(k);
+    if(h.pick>=0){b.disabled=true;if(x.ok)b.classList.add("ok");else if(k===h.pick)b.classList.add("bad")}
+    $("opts").appendChild(b)});
+  $("next").textContent=i===round.length-1?"See score":"Next question";
+  $("next").classList.toggle("hidden",h.pick<0);
 }
-function pick(btn,ok){
-  [...$("opts").children].forEach(b=>{b.disabled=true;if(b.dataset.ok==="true")b.classList.add("ok")});
-  if(ok)score++;else btn.classList.add("bad");
-  $("next").textContent=i===round.length-1?"See score":"Next question";$("next").classList.remove("hidden");$("next").focus();
-}
+function pick(k){hist[i].pick=k;ask();$("next").focus()}
+$("prev").onclick=()=>{if(i>0){i--;ask()}else show("lvl")};
 $("next").onclick=()=>{i++;i<round.length?ask():finish()};
 function finish(){
-  show("end");$("endCat").textContent=cat==="All"?"Everything round":(LABEL[cat]||cat)+" round";
+  score=hist.filter(h=>h&&h.opts[h.pick]&&h.opts[h.pick].ok).length;show("end");$("endCat").textContent=(cat==="All"?"Everything":(LABEL[cat]||cat))+" · "+LV[lv];
   $("score").textContent=`${score}/${round.length}`;
   const p=score/round.length;
   $("msg").textContent=p===1?"Perfect. You know your world.":p>=.7?"Strong round. Try another topic.":p>=.4?"Decent start. Play again to improve.":"Good learning round. Run it again.";
 }
-$("again").onclick=()=>start(cat);$("menu").onclick=()=>show("home");
+$("again").onclick=()=>start(cat,lv);$("menu").onclick=()=>show("home");
 </script>
 </body>
 </html>
