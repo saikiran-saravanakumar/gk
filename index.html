@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Know the World – GK Quiz</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#EEF4F8;--card:#fff;--ink:#12263F;--mute:#5B6E85;--line:#D3DFEA;--teal:#0A8F8F;--sun:#F2B134;--ok:#1E8E5A;--bad:#C8452F;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1B2C;--card:#16273D;--ink:#EAF1F8;--mute:#9FB2C8;--line:#2A3E57;--teal:#3FC4C0;--sun:#F5C15A;--ok:#4CC38A;--bad:#F07A63}}
+:root[data-theme="dark"]{--bg:#0E1B2C;--card:#16273D;--ink:#EAF1F8;--mute:#9FB2C8;--line:#2A3E57;--teal:#3FC4C0;--sun:#F5C15A;--ok:#4CC38A;--bad:#F07A63}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:clamp(2rem,8vw,3rem);font-weight:800;line-height:1.05;margin:8px 0 8px;letter-spacing:-.02em}
+p.sub{color:var(--mute);margin:0 0 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+button{font:inherit;color:inherit;cursor:pointer}
+.cat{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px 12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.cat b{font-size:1.6rem;line-height:1}.cat span{font-weight:600}.cat small{color:var(--mute)}
+.cat:hover,.cat:focus-visible{border-color:var(--teal)}
+.cat.all{grid-column:1/-1;background:var(--ink);color:var(--bg);flex-direction:row;align-items:center;gap:12px}
+.cat.all small{color:inherit;opacity:.75}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.bar{display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-weight:600;margin-bottom:10px}
+.track{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:22px}
+.fill{height:100%;background:var(--teal);width:0;transition:width .3s}
+.q{font-size:clamp(1.3rem,5vw,1.7rem);font-weight:700;line-height:1.25;margin:0 0 18px}
+.opt{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;font-size:1.02rem}
+.opt:not(:disabled):hover{border-color:var(--teal)}
+.opt.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 16%,var(--card))}
+.opt.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,var(--card))}
+.opt:disabled{cursor:default;color:var(--ink)}
+.primary{background:var(--sun);color:#12263F;border:0;border-radius:12px;padding:13px 22px;font-weight:800;margin-top:6px}
+.ghost{background:none;border:1.5px solid var(--line);border-radius:12px;padding:12px 18px;font-weight:600;margin:6px 8px 0 0}
+.score{font-size:clamp(3.5rem,18vw,6rem);font-weight:800;line-height:1;margin:6px 0}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+<section id="home">
+  <h1>Know the<br>whole world.</h1>
+  <p class="sub">10 questions a round. Pick a topic, or mix everything.</p>
+  <div class="grid" id="cats"></div>
+</section>
+<section id="game" class="hidden">
+  <div class="bar"><span id="catName"></span><span id="count"></span></div>
+  <div class="track"><div class="fill" id="fill"></div></div>
+  <p class="q" id="q"></p>
+  <div id="opts"></div>
+  <button class="primary hidden" id="next">Next question</button>
+</section>
+<section id="end" class="hidden">
+  <p class="sub" id="endCat"></p>
+  <div class="score" id="score"></div>
+  <p id="msg" class="q"></p>
+  <button class="primary" id="again">Play again</button>
+  <button class="ghost" id="menu">Change topic</button>
+</section>
+</main>
+<script>
+const CATS={Maths:"🧮",Addition:"➕",Subtraction:"➖",Multiplication:"✖️",Division:"➗",Science:"🔬",Social:"🏘️",Arts:"🎨",Space:"🚀",Hindi:"अ",Geography:"🌍",History:"🏛️",Animals:"🐘",Technology:"💻",Sports:"⚽",Body:"🫀",India:"🇮🇳"};
+const LABEL={Space:"Galaxy",Maths:"Maths mix"};
+const R=(a,b)=>a+Math.random()*(b-a+1)|0;
+const OPS={Addition:()=>{const a=R(10,99),b=R(10,99);return[`${a} + ${b} = ?`,a+b]},Subtraction:()=>{const a=R(30,99),b=R(10,a-1);return[`${a} − ${b} = ?`,a-b]},Multiplication:()=>{const a=R(2,12),b=R(2,12);return[`${a} × ${b} = ?`,a*b]},Division:()=>{const b=R(2,12),r=R(2,12);return[`${b*r} ÷ ${b} = ?`,r]}};
+function genQ(c){const k=c==="Maths"?Object.keys(OPS)[R(0,3)]:c;const[q,a]=OPS[k]();const s=new Set([a]);while(s.size<4){const d=a+R(-10,10);if(d>=0)s.add(d)}const o=[...s].map(String);return[k,q,o,o.indexOf(String(a))]}
+// [category, question, [options], correct index]
+const Q=[
+["Geography","Which is the largest ocean?",["Atlantic","Pacific","Indian","Arctic"],1],
+["Geography","Which river is the longest in Africa?",["Congo","Niger","Nile","Zambezi"],2],
+["Geography","What is the capital of Australia?",["Sydney","Melbourne","Canberra","Perth"],2],
+["Geography","Which country has the most time zones (incl. territories)?",["Russia","USA","France","China"],2],
+["Geography","Mount Everest lies on the border of Nepal and which country?",["India","Bhutan","China","Pakistan"],2],
+["Geography","Which is the smallest country in the world?",["Monaco","Vatican City","San Marino","Malta"],1],
+["Science","What gas do plants absorb for photosynthesis?",["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],2],
+["Science","What is the chemical symbol for gold?",["Ag","Au","Gd","Go"],1],
+["Science","Which is the hardest natural substance?",["Quartz","Iron","Diamond","Granite"],2],
+["Science","Sound travels fastest through which?",["Air","Water","Steel","Vacuum"],2],
+["Science","What is the powerhouse of the cell?",["Nucleus","Ribosome","Mitochondria","Golgi body"],2],
+["Science","Water boils at what temperature at sea level?",["90°C","100°C","110°C","120°C"],1],
+["History","Who was the first President of the United States?",["Lincoln","Jefferson","Washington","Adams"],2],
+["History","In which year did World War II end?",["1943","1945","1947","1950"],1],
+["History","Which civilization built Machu Picchu?",["Aztec","Maya","Inca","Olmec"],2],
+["History","The Great Wall is mainly associated with which country?",["Japan","India","China","Mongolia"],2],
+["History","Who discovered America in 1492 (European voyage)?",["Vasco da Gama","Columbus","Magellan","Cook"],1],
+["History","The French Revolution began in which year?",["1689","1789","1815","1848"],1],
+["Space","Which planet is known as the Red Planet?",["Venus","Mars","Jupiter","Mercury"],1],
+["Space","Who was the first human in space?",["Neil Armstrong","Yuri Gagarin","Buzz Aldrin","Alan Shepard"],1],
+["Space","Which planet has the most prominent rings?",["Jupiter","Uranus","Saturn","Neptune"],2],
+["Space","What is the closest star to Earth?",["Sirius","The Sun","Alpha Centauri","Polaris"],1],
+["Space","Which is the largest planet in our solar system?",["Saturn","Jupiter","Neptune","Earth"],1],
+["Space","India's Chandrayaan-3 landed near which part of the Moon?",["North pole","Equator","South pole","Far side"],2],
+["Animals","Which is the largest land animal?",["Rhino","Hippo","African elephant","Giraffe"],2],
+["Animals","Which bird cannot fly and lives in Antarctica?",["Ostrich","Emu","Penguin","Kiwi"],2],
+["Animals","How many hearts does an octopus have?",["1","2","3","8"],2],
+["Animals","Which mammal can truly fly?",["Flying squirrel","Bat","Sugar glider","Colugo"],1],
+["Animals","What is a group of lions called?",["Pack","Pride","Herd","Troop"],1],
+["Animals","Which is the fastest land animal?",["Lion","Cheetah","Horse","Leopard"],1],
+["Technology","What does CPU stand for?",["Central Processing Unit","Computer Power Unit","Core Program Utility","Central Printing Unit"],0],
+["Technology","Who founded Microsoft with Paul Allen?",["Steve Jobs","Bill Gates","Elon Musk","Larry Page"],1],
+["Technology","What does HTTP stand for?",["HyperText Transfer Protocol","High Transfer Text Process","HyperLink Type Program","Host Transfer Tool Protocol"],0],
+["Technology","Which company created the Android OS (before Google bought it)?",["Android Inc.","Nokia","Samsung","Oracle"],0],
+["Technology","Binary uses which digits?",["0 and 1","1 and 2","0 to 9","A and B"],0],
+["Technology","Who is credited with inventing the World Wide Web?",["Vint Cerf","Tim Berners-Lee","Linus Torvalds","Alan Turing"],1],
+["Sports","How many players are on a football (soccer) team on the pitch?",["9","10","11","12"],2],
+["Sports","Which country hosted the first modern Olympics in 1896?",["France","Greece","UK","USA"],1],
+["Sports","In cricket, how many balls are in a standard over?",["4","5","6","8"],2],
+["Sports","Which sport uses a shuttlecock?",["Tennis","Badminton","Squash","Table tennis"],1],
+["Sports","Which country won the 2022 FIFA World Cup?",["France","Brazil","Argentina","Croatia"],2],
+["Sports","How often are the Summer Olympics held?",["2 years","3 years","4 years","5 years"],2],
+["Arts","Who painted the Mona Lisa?",["Michelangelo","Leonardo da Vinci","Raphael","Van Gogh"],1],
+["Arts","Who wrote 'Romeo and Juliet'?",["Dickens","Shakespeare","Austen","Tolstoy"],1],
+["Arts","Which instrument has 88 keys?",["Organ","Accordion","Piano","Harp"],2],
+["Arts","The Taj Mahal was built by which Mughal emperor?",["Akbar","Shah Jahan","Aurangzeb","Humayun"],1],
+["Arts","Who composed the 'Fifth Symphony' with the famous four-note opening?",["Mozart","Bach","Beethoven","Chopin"],2],
+["Arts","Which Japanese art folds paper into shapes?",["Ikebana","Origami","Bonsai","Kintsugi"],1],
+["Body","How many bones does an adult human have?",["186","206","226","256"],1],
+["Body","Which organ pumps blood around the body?",["Liver","Lungs","Heart","Kidney"],2],
+["Body","Which vitamin do we get from sunlight?",["A","C","D","K"],2],
+["Body","What is the largest organ of the human body?",["Liver","Skin","Brain","Intestine"],1],
+["Body","Which blood group is the universal donor?",["A+","AB+","O-","B-"],2],
+["Body","How many chambers does the human heart have?",["2","3","4","5"],2],
+["India","Who was the first Prime Minister of India?",["Sardar Patel","Jawaharlal Nehru","Gandhi","Rajendra Prasad"],1],
+["India","Which is the longest river in India?",["Yamuna","Ganga","Godavari","Brahmaputra"],1],
+["India","The Brihadeeswarar Temple is in which city?",["Madurai","Thanjavur","Trichy","Kanchipuram"],1],
+["India","Which is the national animal of India?",["Lion","Elephant","Bengal tiger","Leopard"],2],
+["India","In which year did India gain independence?",["1945","1947","1950","1952"],1],
+["India","ISRO has its main launch site at which place?",["Sriharikota","Bengaluru","Thumba","Mysuru"],0],
+["Social","How many states does India have?",["26","28","29","30"],1],
+["Social","Who is called the Father of the Nation in India?",["Nehru","Subhas Bose","Mahatma Gandhi","Patel"],2],
+["Social","Which is the lower house of India's Parliament?",["Rajya Sabha","Lok Sabha","Vidhan Sabha","Gram Sabha"],1],
+["Social","On which date is Republic Day celebrated in India?",["15 August","26 January","2 October","14 November"],1],
+["Social","Which is the largest continent by area?",["Africa","Asia","Europe","North America"],1],
+["Social","Where is the United Nations headquarters?",["Geneva","London","New York","Paris"],2],
+["Social","What is the currency of Japan?",["Yuan","Won","Yen","Baht"],2],
+["Social","Who wrote India's national anthem?",["Bankim Chandra","Rabindranath Tagore","Sarojini Naidu","Iqbal"],1],
+["Hindi","'पानी' का अंग्रेज़ी अर्थ क्या है?",["Fire","Water","Air","Earth"],1],
+["Hindi","'दिन' का विलोम शब्द क्या है?",["सुबह","शाम","रात","दोपहर"],2],
+["Hindi","'ऊँचा' का विलोम शब्द क्या है?",["नीचा","लंबा","बड़ा","मोटा"],0],
+["Hindi","'चंद्रमा' का पर्यायवाची कौन-सा है?",["रवि","शशि","पवन","नीर"],1],
+["Hindi","हिंदी में स्वर कितने होते हैं (मानक रूप से)?",["10","11","13","52"],1],
+["Hindi","हिंदी दिवस कब मनाया जाता है?",["14 सितंबर","15 अगस्त","26 जनवरी","2 अक्टूबर"],0],
+["Hindi","'किताब' का अंग्रेज़ी शब्द क्या है?",["Pen","Book","Bag","Desk"],1],
+["Space","What is the name of our galaxy?",["Andromeda","Milky Way","Triangulum","Whirlpool"],1],
+["Space","Which planet is closest to the Sun?",["Venus","Mercury","Mars","Earth"],1],
+["Space","How many planets are in our solar system?",["7","8","9","10"],1],
+["Space","Sunlight takes about how long to reach Earth?",["8 seconds","8 minutes","8 hours","8 days"],1],
+["Space","Which large spiral galaxy is nearest to the Milky Way?",["Andromeda","Sombrero","Pinwheel","Cartwheel"],0],
+["Space","The boundary around a black hole is called?",["Corona","Event horizon","Singularity ring","Photosphere"],1],
+["Arts","Who is traditionally credited with writing the Ramayana?",["Vyasa","Valmiki","Kalidasa","Tulsidas"],1],
+["Arts","Which classical dance form is from Tamil Nadu?",["Kathak","Bharatanatyam","Odissi","Kuchipudi"],1]
+];
+const $=id=>document.getElementById(id),show=id=>["home","game","end"].forEach(s=>$(s).classList.toggle("hidden",s!==id));
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+let cat="All",round=[],i=0,score=0;
+const cats=$("cats");
+cats.innerHTML=`<button class="cat all" data-c="All"><b>🌐</b><div><span>Everything</span><br><small>Random mix, all ${Q.length} questions</small></div></button>`+
+Object.entries(CATS).map(([c,e])=>`<button class="cat" data-c="${c}"><b>${e}</b><span>${LABEL[c]||c}</span><small>${(c==="Maths"||OPS[c])?"Endless":Q.filter(q=>q[0]===c).length+" questions"}</small></button>`).join("");
+cats.onclick=e=>{const b=e.target.closest("button");if(b)start(b.dataset.c)};
+function start(c){cat=c;round=(c==="Maths"||OPS[c])?Array.from({length:10},()=>genQ(c)):shuf(Q.filter(q=>c==="All"||q[0]===c)).slice(0,10);i=0;score=0;show("game");ask()}
+function ask(){
+  const [c,q,o,a]=round[i];const opts=shuf(o.map((t,k)=>({t,ok:k===a})));
+  $("catName").textContent=(CATS[c]||"")+" "+(LABEL[c]||c);$("count").textContent=`${i+1} / ${round.length}`;
+  $("fill").style.width=(i/round.length*100)+"%";$("q").textContent=q;$("next").classList.add("hidden");
+  $("opts").innerHTML="";
+  opts.forEach(x=>{const b=document.createElement("button");b.className="opt";b.textContent=x.t;b.onclick=()=>pick(b,x.ok);b.dataset.ok=x.ok;$("opts").appendChild(b)});
+}
+function pick(btn,ok){
+  [...$("opts").children].forEach(b=>{b.disabled=true;if(b.dataset.ok==="true")b.classList.add("ok")});
+  if(ok)score++;else btn.classList.add("bad");
+  $("next").textContent=i===round.length-1?"See score":"Next question";$("next").classList.remove("hidden");$("next").focus();
+}
+$("next").onclick=()=>{i++;i<round.length?ask():finish()};
+function finish(){
+  show("end");$("endCat").textContent=cat==="All"?"Everything round":(LABEL[cat]||cat)+" round";
+  $("score").textContent=`${score}/${round.length}`;
+  const p=score/round.length;
+  $("msg").textContent=p===1?"Perfect. You know your world.":p>=.7?"Strong round. Try another topic.":p>=.4?"Decent start. Play again to improve.":"Good learning round. Run it again.";
+}
+$("again").onclick=()=>start(cat);$("menu").onclick=()=>show("home");
+</script>
+</body>
+</html>
